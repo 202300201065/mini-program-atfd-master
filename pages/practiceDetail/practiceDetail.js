@@ -121,40 +121,44 @@ Page({
 
   // 处理题目数据
   processQuestion(data) {
-    // 防御：后端返回的题目数据可能缺少 info 或 detail 字段
-    if (!data) {
-      console.warn('题目数据为空');
-      return { id: 0, type: 'unknown', content: '题目数据异常', tags: [], analysis: '' };
+    // 防御：后端返回的题目数据可能为 null 或缺少 info / detail 字段
+    if (!data || typeof data !== 'object') {
+      console.warn('题目数据为空:', data);
+      return { id: 0, type: 'unknown', content: '题目数据异常', tags: [], analysis: '', options: [], correctAnswer: null, correctAnswers: [] };
     }
-    const { info = {}, detail = {}, tags } = data;
+    // 注意：解构默认值 = {} 只对 undefined 生效，对 null 不生效，所以必须显式兜底
+    const rawInfo = (data.info && typeof data.info === 'object') ? data.info : {};
+    const rawDetail = (data.detail && typeof data.detail === 'object') ? data.detail : {};
+    const tags = data.tags || [];
+
     const question = {
-      id: detail.questionId || 0,
-      type: info.type || 'unknown',
-      content: info.content || '暂无题目内容',
-      tags: tags || [],
-      analysis: detail.analysis || ''
+      id: rawDetail.questionId || 0,
+      type: rawInfo.type || 'unknown',
+      content: rawInfo.content || '暂无题目内容',
+      tags: tags,
+      analysis: rawDetail.analysis || ''
     };
 
     // 根据题型处理选项和答案
-    switch (info.type) {
+    switch (rawInfo.type) {
       case 'single':
-        question.options = detail.optionlist || [];
-        question.correctAnswer = detail.correctOption;
+        question.options = rawDetail.optionlist || [];
+        question.correctAnswer = rawDetail.correctOption;
         break;
       case 'multiple':
-        question.options = detail.optionlist || [];
-        question.correctAnswers = detail.correctOptionlist || [];
+        question.options = rawDetail.optionlist || [];
+        question.correctAnswers = rawDetail.correctOptionlist || [];
         // 创建Map以便在wxml中判断
         question.correctAnswersMap = {};
-        (detail.correctOptionlist || []).forEach(id => {
+        (rawDetail.correctOptionlist || []).forEach(id => {
           question.correctAnswersMap[id] = true;
         });
         break;
       case 'true_false':
-        question.correctAnswer = detail.correctAnswer;
+        question.correctAnswer = rawDetail.correctAnswer;
         break;
       case 'fill':
-        question.correctAnswers = detail.correctAnswerlist || [];
+        question.correctAnswers = rawDetail.correctAnswerlist || [];
         // 计算填空数量
         question.blankCount = question.correctAnswers.length;
         break;

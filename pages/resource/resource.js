@@ -201,11 +201,26 @@ Page({
       return;
     }
 
+    // 补全 URL：后端可能返回相对路径（如 /uploads/file.pdf），downloadFile 需要完整 URL
+    let fullUrl = fileUrl;
+    if (!/^https?:\/\//i.test(fullUrl)) {
+      // 从 app.js 的 baseUrl 中提取协议+域名+端口
+      const baseUrl = getApp().globalData.baseUrl || 'https://106.52.162.142:8443/dm-api';
+      // 去掉 /dm-api 后缀，只保留 https://106.52.162.142:8443
+      const hostMatch = baseUrl.match(/^(https?:\/\/[^/]+)/i);
+      const host = hostMatch ? hostMatch[1] : 'https://106.52.162.142:8443';
+      // 确保相对路径以 / 开头
+      if (!fullUrl.startsWith('/')) {
+        fullUrl = '/' + fullUrl;
+      }
+      fullUrl = host + fullUrl;
+    }
+
     wx.showLoading({ title: '下载中...' });
 
     // 使用 wx.downloadFile 下载文件
     wx.downloadFile({
-      url: fileUrl,
+      url: fullUrl,
       success: (res) => {
         wx.hideLoading();
         
