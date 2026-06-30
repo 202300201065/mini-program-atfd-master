@@ -81,23 +81,38 @@ Page({
   },
 
   // 检查登录状态并加载数据
-  checkLoginAndLoadData() {
+  async checkLoginAndLoadData() {
     const token = wx.getStorageSync('token');
     if (token) {
-      const payload = parseJwt(token);
-      if (payload && payload.classId) {
-        this.setData({
-          isLoggedIn: true,
-          classId: payload.classId
-        });
-        this.loadPracticeList();
-      } else {
-        this.setData({
-          isLoggedIn: !!payload,
-          classId: '',
-          practiceList: []
-        });
-      }
+      let payload = parseJwt(token);
+      if (payload) {
+        // 已登录但 token 中缺少 classId，尝试从服务端获取最新信息
+        if (!payload.classId) {
+          try {
+            const refreshRes = await get('/getMyProfile');
+            if (refreshRes.code === 1 && refreshRes.data) {
+              wx.setStorageSync('token', refreshRes.data);
+              payload = parseJwt(refreshRes.data) || payload;
+            }
+          } catch (err) {
+            console.error('获取用户信息失败:', err);
+          }
+        }
+
+        if (payload.classId) {
+          this.setData({
+            isLoggedIn: true,
+            classId: payload.classId
+          });
+          this.loadPracticeList();
+        } else {
+          this.setData({
+            isLoggedIn: true,
+            classId: '',
+            practiceList: []
+          });
+        }
+      }  
     } else {
       this.setData({
         isLoggedIn: false,

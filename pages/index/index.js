@@ -64,9 +64,22 @@ Page({
   async checkLoginStatus() {
     const token = wx.getStorageSync('token');
     if (token) {
-      const payload = parseJwt(token);
+      let payload = parseJwt(token);
       console.log('Token payload:', payload); // 调试：查看 Token 中的字段
       if (payload) {
+        // 已登录但 token 中缺少 classId，尝试从服务端获取最新信息
+        if (!payload.classId) {
+          try {
+            const refreshRes = await get('/getMyProfile');
+            if (refreshRes.code === 1 && refreshRes.data) {
+              wx.setStorageSync('token', refreshRes.data);
+              payload = parseJwt(refreshRes.data) || payload;
+            }
+          } catch (err) {
+            console.error('获取用户信息失败:', err);
+          }
+        }
+
         const userInfo = {
           email: payload.email || '',
           username: payload.username || '未设置昵称',
@@ -355,6 +368,37 @@ Page({
               });
               // 刷新用户信息（从新 Token 解析 classId）
               this.checkLoginStatus();
+            } else if (result.msg && (result.msg.includes('已加入') || result.msg.includes('已经加入'))) {
+              // 用户已在班级中但本地 token 未更新，尝试从服务端同步最新 token
+              wx.showLoading({ title: '同步中...' });
+              try {
+                const refreshRes = await get('/getMyProfile');
+                wx.hideLoading();
+                if (refreshRes.code === 1 && refreshRes.data) {
+                  wx.setStorageSync('token', refreshRes.data);
+                  Toast({
+                    context: this,
+                    selector: '#t-toast',
+                    message: '已同步班级信息',
+                    theme: 'success'
+                  });
+                  this.checkLoginStatus();
+                } else {
+                  Toast({
+                    context: this,
+                    selector: '#t-toast',
+                    message: result.msg
+                  });
+                }
+              } catch (refreshErr) {
+                wx.hideLoading();
+                console.error('同步班级信息失败:', refreshErr);
+                Toast({
+                  context: this,
+                  selector: '#t-toast',
+                  message: '已加入班级，请重新登录以刷新信息'
+                });
+              }
             } else {
               Toast({
                 context: this,
@@ -385,7 +429,7 @@ Page({
     });
   },
 
-  // 邮箱输入事件（原 onPhoneChange）
+  // 邮箱输入事件
   onEmailChange(e) {
     this.setData({ email: e.detail.value });
   },
@@ -402,7 +446,7 @@ Page({
     this.setData({ verifyCode: e.detail.value });
   },
 
-  // 验证邮箱（原验证手机号）
+  // 验证邮箱
   validateEmail() {
     const { email } = this.data;
     if (!email) {

@@ -7,10 +7,14 @@
       <view class="avatar-section">
         <view class="avatar-wrapper" bindtap="handleChangeAvatar">
           <image 
+          wx:if="{{userInfo.avatar}}"
             class="avatar" 
-            src="{{userInfo.avatar || 'https://tdesign.gtimg.com/mobile/demos/avatar_1.png'}}" 
+            src="{{userInfo.avatar}}" 
             mode="aspectFill"
           />
+          <view wx:else class="avatar-placeholder">
+            <t-icon name="user" size="64rpx" color="#bbb" />
+          </view>
           <view class="avatar-edit-icon">
             <t-icon name="camera" size="28rpx" color="#fff" />
           </view>
@@ -80,7 +84,7 @@
         <t-input
           label="邮箱"
           placeholder="请输入邮箱"
-          type="text"
+          type="email"
           value="{{email}}"
           bind:change="onEmailChange"
           clearable
@@ -132,7 +136,7 @@
         <t-input
           label="邮箱"
           placeholder="请输入邮箱"
-          type="text"
+          type="email"
           value="{{email}}"
           bind:change="onEmailChange"
           clearable
@@ -190,7 +194,7 @@
         <t-input
           label="邮箱"
           placeholder="请输入邮箱"
-          type="text"
+          type="email"
           value="{{email}}"
           bind:change="onEmailChange"
           clearable

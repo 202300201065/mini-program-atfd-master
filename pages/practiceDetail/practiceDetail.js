@@ -121,11 +121,16 @@ Page({
 
   // 处理题目数据
   processQuestion(data) {
-    const { info, detail, tags } = data;
+    // 防御：后端返回的题目数据可能缺少 info 或 detail 字段
+    if (!data) {
+      console.warn('题目数据为空');
+      return { id: 0, type: 'unknown', content: '题目数据异常', tags: [], analysis: '' };
+    }
+    const { info = {}, detail = {}, tags } = data;
     const question = {
-      id: detail.questionId,
-      type: info.type,
-      content: info.content,
+      id: detail.questionId || 0,
+      type: info.type || 'unknown',
+      content: info.content || '暂无题目内容',
       tags: tags || [],
       analysis: detail.analysis || ''
     };
