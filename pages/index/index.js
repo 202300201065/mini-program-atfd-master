@@ -31,7 +31,7 @@ Page({
   data: {
     isLoggedIn: false,      // 是否已登录
     userInfo: {             // 用户信息
-      phoneNumber: '',
+      email: '',
       username: '',
       cardId: '',
       avatar: '',
@@ -40,7 +40,7 @@ Page({
     },
     pageMode: 'login',      // login | register | reset
     loginType: 'password',  // password | code
-    phoneNumber: '',
+    email: '',
     password: '',
     confirmPassword: '',
     verifyCode: '',
@@ -68,7 +68,7 @@ Page({
       console.log('Token payload:', payload); // 调试：查看 Token 中的字段
       if (payload) {
         const userInfo = {
-          phoneNumber: payload.phoneNumber || '',
+          email: payload.email || '',
           username: payload.username || '未设置昵称',
           cardId: payload.cardId || '',
           avatar: payload.avatar || '',
@@ -126,7 +126,7 @@ Page({
           this.setData({
             isLoggedIn: false,
             userInfo: {
-              phoneNumber: '',
+              email: '',
               username: '',
               cardId: '',
               avatar: '',
@@ -160,7 +160,7 @@ Page({
         
         try {
           const result = await uploadFile('/updateAvatar', tempFilePath, {
-            phoneNumber: this.data.userInfo.phoneNumber
+            email: this.data.userInfo.email
           });
           
           wx.hideLoading();
@@ -217,7 +217,7 @@ Page({
           
           try {
             const result = await post('/updateUsername', {
-              phoneNumber: this.data.userInfo.phoneNumber,
+              email: this.data.userInfo.email,
               username: newUsername
             });
             
@@ -276,7 +276,7 @@ Page({
           
           try {
             const result = await post('/bindCardId', {
-              phoneNumber: this.data.userInfo.phoneNumber,
+              email: this.data.userInfo.email,
               cardId: cardId
             });
             
@@ -385,9 +385,9 @@ Page({
     });
   },
 
-  // 输入框事件
-  onPhoneChange(e) {
-    this.setData({ phoneNumber: e.detail.value });
+  // 邮箱输入事件（原 onPhoneChange）
+  onEmailChange(e) {
+    this.setData({ email: e.detail.value });
   },
 
   onPasswordChange(e) {
@@ -402,22 +402,24 @@ Page({
     this.setData({ verifyCode: e.detail.value });
   },
 
-  // 验证手机号
-  validatePhone() {
-    const { phoneNumber } = this.data;
-    if (!phoneNumber) {
+  // 验证邮箱（原验证手机号）
+  validateEmail() {
+    const { email } = this.data;
+    if (!email) {
       Toast({
         context: this,
         selector: '#t-toast',
-        message: '请输入手机号'
+        message: '请输入邮箱'
       });
       return false;
     }
-    if (!/^1[3-9]\d{9}$/.test(phoneNumber)) {
+    // 邮箱正则
+    const emailReg = /^[a-zA-Z0-9_\-\.]+@[a-zA-Z0-9_\-\.]+\.[a-zA-Z]{2,}$/;
+    if (!emailReg.test(email)) {
       Toast({
         context: this,
         selector: '#t-toast',
-        message: '请输入正确的手机号'
+        message: '请输入正确的邮箱'
       });
       return false;
     }
@@ -427,11 +429,11 @@ Page({
   // 发送验证码
   async sendCode() {
     if (this.data.countdown > 0) return;
-    if (!this.validatePhone()) return;
+    if (!this.validateEmail()) return;
 
     try {
       const res = await post('/sendCode', {
-        phoneNumber: this.data.phoneNumber
+        email: this.data.email
       });
 
       if (res.code === 1) {
@@ -473,9 +475,9 @@ Page({
 
   // 登录
   async handleLogin() {
-    if (!this.validatePhone()) return;
+    if (!this.validateEmail()) return;
 
-    const { loginType, phoneNumber, password, verifyCode } = this.data;
+    const { loginType, email, password, verifyCode } = this.data;
 
     if (loginType === 'password' && !password) {
       Toast({ context: this, selector: '#t-toast', message: '请输入密码' });
@@ -490,7 +492,7 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const params = { phoneNumber };
+      const params = { email };
       if (loginType === 'password') {
         params.password = password;
       } else {
@@ -524,9 +526,9 @@ Page({
 
   // 注册
   async handleRegister() {
-    if (!this.validatePhone()) return;
+    if (!this.validateEmail()) return;
 
-    const { phoneNumber, verifyCode, password, confirmPassword } = this.data;
+    const { email, verifyCode, password, confirmPassword } = this.data;
 
     if (!verifyCode) {
       Toast({ context: this, selector: '#t-toast', message: '请输入验证码' });
@@ -552,7 +554,7 @@ Page({
 
     try {
       const res = await post('/register/student', {
-        phoneNumber,
+        email,
         verifyCode,
         password
       });
@@ -580,9 +582,9 @@ Page({
 
   // 重置密码
   async handleReset() {
-    if (!this.validatePhone()) return;
+    if (!this.validateEmail()) return;
 
-    const { phoneNumber, verifyCode, password, confirmPassword } = this.data;
+    const { email, verifyCode, password, confirmPassword } = this.data;
 
     if (!verifyCode) {
       Toast({ context: this, selector: '#t-toast', message: '请输入验证码' });
@@ -608,7 +610,7 @@ Page({
 
     try {
       const res = await post('/resetPassword', {
-        phoneNumber,
+        email,
         verifyCode,
         password
       });

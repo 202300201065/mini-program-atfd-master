@@ -58,9 +58,9 @@ export interface TdButtonProps {
     };
     openType?: {
         type: StringConstructor;
-        value?: 'contact' | 'share' | 'getPhoneNumber' | 'getUserInfo' | 'launchApp' | 'openSetting' | 'feedback' | 'chooseAvatar' | 'agreePrivacyAuthorization';
+        value?: 'contact' | 'share' | 'getemail' | 'getUserInfo' | 'launchApp' | 'openSetting' | 'feedback' | 'chooseAvatar' | 'agreePrivacyAuthorization';
     };
-    phoneNumberNoQuotaToast?: {
+    emailNoQuotaToast?: {
         type: BooleanConstructor;
         value?: boolean;
     };
